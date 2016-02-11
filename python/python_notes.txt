@@ -1,0 +1,93 @@
+- pydev:
+Go to: window > preferences > PyDev > Interpreter - (Python/Jython/IronPython).
+
+Choose the interpreter you have installed in your computer (such as python.exe, jython.jar or ipy.exe).
+/usr/bin/python
+
+- inside ipython, to run a script:
+
+cd /home/turg/SPARK/scala_ws/MyPythonTest/src/root/nested/
+run example.py
+
+- to see type of a variable:
+type(bmi)
+
+- list:
+heights = [1.74, 1.71, 1.70]
+
+- mixed type list: 
+names_and_heights = ['Turgay', 1.74, 'Meltem', 1.71, 'Begüm', 1.70]
+lists_in_a_list: = [['Turgay', 1.74], ['Meltem', 1.71], ['Begüm', 1.70]]
+
+- list index:
+heights[2]
+
+- list slicing (start included, end not included):
+heights[0:1]
+
+- aasignment with slice:
+heights[0:2] = [3, 4]
+
+- add an element to a list:
+heights = heights + [7, 8]
+or, heights.append(9)
+
+- delete an element from a list
+del(heights[2])
+
+- direct assignment copies reference:
+heights2 = heights
+heights2[0] = 2
+heights is also changed here
+
+- other assignments create a new list
+heights2 = list(heights) or,
+heights2 = heights[:2]
+
+-getting help:
+help(round)
+
+packages, modules:
+in a package, each python script is a module
+
+numpy (numeric python):
+- import numpy
+import numpy as np
+from numpy import array
+myarray = numpy.array([1,2,3])
+
+- numpy array is extension of python list, to provide math operations
+
+heights = [1.70, 1.75, 1.80]
+weights = [70, 75, 80]
+np_heights = np.array(heights)
+np_weights = np.array(weights)
+
+- Then we can use these numpy arrays to get a new array applying a function to all elements (element-wise)
+bmi = np_weights / np_heights**2
+
+- subsetting (filter):
+bmi > 23 --> returns: array([ True,  True,  True]
+bmi > 24.23 --> returns: array([ False,  True,  True]
+
+bmi[bmi > 24.23] --> returns: array([ 24.48979592,  24.69135802])
+
+same thing:
+high = bmi > 24.23
+bmi[high]
+
+- np.array([True, 1, 2]) + np.array([3, 4, False])
+returns: array([4, 5, 2])
+True is converted to 1, False to 0
+
+2d arrays:
+np_2d = np.array([weights, heights])
+np_2d[0] --> array([ 70.,  75.,  80.])
+np_2d[0][1] --> 75.0 (same thing: np_2d[0,1] )
+
+taking a slice:
+np_2d[:,0:2]
+--> returns: array([[ 70.  ,  75.  ],
+                    [  1.7 ,   1.75]])
+                    
+                    
