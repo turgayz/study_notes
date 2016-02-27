@@ -1,0 +1,102 @@
+MAchine learning algorithms define a "Decision surface"
+
+Supervised Classification:
+
+Gaussian Naive Bayes:
+
+import numpy as np
+X = np.array([[-1, -1], [-2, -2], [-3, -2], [1, 1], [2, 1], [3, 2]])
+Y = np.array([1, 1, 1, 2, 2, 2])
+from sklearn.naive_bayes import GaussianNB
+clf = GaussianNB()
+clf.fit(X, Y)
+print(clf.predict([[-0.8, -1]]))
+
+from sklearn.metrics import accuracy_score
+accuracy = accuracy_score(labels_test, pred)
+
+Bayes:
+P(C) = 0.01 cancer probability in population
+P(!C) = 0.99
+
+TEST: 90% it is positive if you have C.
+This is called the "sensitivity" --> P(Pos|C)
+
+TEST: 90% it is negative if you don't have C.
+This is called the "specitivity" P(Neg|!C)
+So, P(Pos|!C) = 0.1
+
+if test is positive, what is the probability of having cancer?
+8 1/3 %
+
+(prior prob) * (test evidence) --> (posterior prob)
+
+prior: P(C) = 0.01
+
+
+joint prob: P(C,Pos)  = P(C)  * P(Pos|C)  = 0.01 * 0.9 = 0.009 
+            P(!C,Pos) = P(!C) * P(Pos|!C) = 0.99 * 0.1 = 0.099
+           
+Normalizer: first compute sum: 0.009 + 0.099 = 0.108
+           P(Pos) = P(C,Pos) + P(!C,Pos ) 0.108
+
+Posterior: P(C|Pos) = P(C,Pos) / Normalizer = 0.083
+           P(!C|Pos) = P(!C,Pos) / Normalizer = 0.917
+      
+Naive Bayes:
+Text Learning:
+
+CHRIS: LOVE .1 DEAL .8 LIFE .1 
+SARA: LOVE .5 DEAL .2 LIFE .3
+
+P(CHRIS = 0.5)
+P(SARA = 0.5)
+
+LIFE DEAL --> 
+CHRIS --> .1 * .8 * .5(Chris) = 0.04
+SARA  --> .3 * .2 * .5(Sara)  = 0.03
+
+P(CHRIS| "LIFE DEAL") = 0.04 / 0.07
+P(SARA| "LIFE DEAL")  = 0.03 / 0.07 (0.07 is sum of Chris, Sara)
+
+LOVE DEAL -->
+CHRIS --> .1 * .8 * .5 = 0.04
+SARA  --> .5 * .2 * .5 = 0.05
+
+P(CHRIS| "LOVE DEAL") = 0.04 / 0.09
+P(SARA| "LOVE DEAL")  = 0.05 / 0.09
+
+Mini Project: 
+pip install scikit-learn
+pip install nltk (natural language toolkit)
+
+training time: 0.626 s
+prediction time: 0.09 s
+
+SUPPORT VECTOR MACHINES:
+KERNELs are functions that: 
+Low dimensional x,y (not separable) 
+--> High dim x1 x2 x3 x4 x5 (separable)
+Result is a non-linear separation
+
+PArameters:
+C: 
+gamma: 
+kernel: 
+
+DECISION TREES:
+allows you to ask multiple questions
+constructs a decision tree, going deeper as classifying
+Entropy: controls how a DT decides where to split the data
+       : measure of "impurity" in a bunch of examples
+       = - (minus) Sum of(pi log2(pi)) --> pi = fraction of a class
+       : is the opposite of purity
+       
+Information gain: Entropy(parent) - [weighted average] entropy(children)
+
+Decision tree algorithm will maximize information gain
+
+a "high bias" algorithm - completely ignores data     
+a "low bias" algorithm - is very much dependent on data (high variance)
+
+DT is prone to overfitting       

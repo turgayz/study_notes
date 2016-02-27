@@ -90,4 +90,89 @@ np_2d[:,0:2]
 --> returns: array([[ 70.  ,  75.  ],
                     [  1.7 ,   1.75]])
                     
-                    
+
+- mean of all rows, column 0:
+np.mean(np_baseball[:,0])
+
+- median of all rows, column 0:
+np.median(np_baseball[:,0])
+
+- are 2 columns correlated?
+np.corrcoef(np_baseball[:,0], np_baseball[:,1])
+
+- standard deviation
+np.std(np_baseball[:,0])     
+
+sum, sort        
+
+- creating random data, using normal distribution:
+height = np.round(np.random.normal(1.75, 0.20, 5000), 2)
+
+column_stack: get n 1 dimensional arrays, make a 2-d array. each row contains n columns:
+np_city = np.column_stack((height, weight))
+
+- can use index of an array to find matching values in other array:
+positions = ['GK', 'M', 'A', 'D']
+heights = [191, 184, 185, 180]
+np_heights = np.array(heights)
+np_positions = np.array(positions)
+np_soccer = np.column_stack((np_positions, np_heights))
+isGK = np_positions == 'GK'
+np_positions[isGK]
+this is possible!!! np_heights[isGK] --> gives values at indexes where isGK is true
+
+- installing matploblib
+http://stackoverflow.com/questions/19613493/ipython-and-matplotlib-in-ubuntu-13-10
+
+import matplotlib.pyplot as plt
+year = [1950, 1970, 1990, 2010]
+pop = [2.51, 3.69, 5.26, 6.92]
+plt.plot(year, pop)
+plt.scatter(year, pop)
+plt.show()
+
+- histogram:
+values = [0, 6, 14, 16, 22, 25, 26, 32, 35, 39, 42, 60]
+plt.hist(values, bins = 3)
+
+- adding labels:
+plt.xlabel('Year')
+plt.ylabel('Population')
+plt.title('World Population Projections')
+plt.yticks([0, 2, 4, 6, 8, 10],
+           ['0', '2B', '4B', '6B', '8B', '10B'])
+plt.fill_between(year, pop, 2, color = 'green') --> fill until 2
+
+- in a scatter plt, s=pop(a list) can contain how big the dot is.
+          plt.scatter(gdp_cap, life_exp, s = pop)
+          
+- in a scatter plt, c=col(a list) can contain the color for each dot
+          plt.scatter(gdp_cap, life_exp, c = col)
+          
+- pandas (high level data manipulation tool):
+holds data in DataFrames
+
+import pandas as pd
+brics = pd.read_csv("/home/turg/sil/brics.csv", index_col=0)
+
+- to access by columns:
+brics["country"] 
+or
+brics.country
+
+also, double brackets return a dataframe:
+brics[["country"]]
+
+- to add a column:
+brics["on_earth"] = [True, True, True]
+brics["density"] = brics.population / brics.area * 1000000
+
+- to access a row:
+brics.loc["BR"]     
+
+- to access an element:
+brics.loc["BR", "capital"]      
+brics.capital.loc["BR"]    
+brics.loc["BR"]["capital"]   
+
+cars.loc[['IN', 'RU'], 'cars_per_cap']      

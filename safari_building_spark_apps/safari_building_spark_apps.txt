@@ -1,0 +1,122 @@
+Driver: Process that contains the SparkContext
+Worker: Node that can run application code
+
+RDD: Resilient: if the data in memory (or on a node) is lost, it can be recreated
+     Distributed: data is chunked into partitions and stored in memory across the cluster 
+     Dataset: initial data can come from a file or be created programmatically
+
+RDDs are read-only and immutable
+
+Transformations: Lazy Evaluation, Returns new RDD
+Actions: Materialize data (Evaluates RDD lineage), Returns final value to driver
+
+flatMap: maps each element to an iterator, and collects all values from all iterators:
+nums = sc.parallellize([1,2,3])
+nums.flatMap(lambda x: range(x)) --> {0,0,1,0,1,2}
+
+nums.reduce(lambda x,y: x+y) --> 6
+
+nums.saveAsTextFile("nums.txt")   
+
+Key-Value operations:
+
+pets = sc.parallelize([("cat", 1), ("dog", 1), ("cat", 2)])
+
+pets.reduceByKey(lambda x,y: x+y).collect() --> [('dog', 1), ('cat', 3)]
+(first groups, then reduces)
+
+pets.groupByKey().collect() --> [("dog", iterable), ("cat", iterable)]
+
+SQLContext, DataFrame
+
+ipython notebook ile sqlcontext, csv için, başlatmadan önce:
+export PACKAGES="com.databricks:spark-csv_2.11:1.3.0"
+export PYSPARK_SUBMIT_ARGS="--packages ${PACKAGES} pyspark-shell"
+
+import pyspark as ps
+sc = ps.SparkContext()
+
+from pyspark.sql import SQLContext
+sqlContext = SQLContext(sc)
+link = "/home/turg/SPARK/livelessons/spark-live-lessons-data/bulk_data/airline-data/"
+
+df = sqlContext.read.format("com.databricks.spark.csv")\
+.option("header", "true")\
+.option("inferSchema", "true")\
+.load(link)
+
+df.head()
+df.schema 
+
+subset = df.select("DEP_DELAY", "ARR_DELAY", "ORIGIN_AIRPORT_ID", "DEST_AIRPORT_ID")
+subset.show()
+
+subset.dtypes
+
+link_meals = "/home/turg/SPARK/livelessons/spark-live-lessons-data/bulk_data/readychef/meals.txt"
+link_events = "/home/turg/SPARK/livelessons/spark-live-lessons-data/bulk_data/readychef/events.txt"
+
+meals_rdd = sc.textFile(link_meals)
+events_rdd = sc.textFile(link_events)
+
+header_meals = meals_rdd.first()
+header_events = events_rdd.first()
+
+meals_no_header = meals_rdd.filter(lambda row: row != header_meals)
+events_no_header = events_rdd.filter(lambda row: row != header_events)
+
+meals_json = meals_no_header.map(lambda row: row.split(';')).map(lambda row_list: dict(zip(header_meals.split(';'), row_list)))
+events_json = events_no_header.map(lambda row: row.split(';')).map(lambda row_list: dict(zip(header_events.split(';'), row_list)))
+
+meals_df = sqlContext.jsonRDD(meals_json)
+events_df = sqlContext.jsonRDD(events_json)
+
+def type_conversion(d, columns):
+   for c in columns:
+       d[c] = int (d[c])
+
+   return d
+
+import json   
+meals_typed = meals_json.map(lambda j: json.dumps(type_conversion(j, ['meal_id', 'price'])))
+events_typed = events_json.map(lambda j: json.dumps(type_conversion(j, ['meal_id', 'userid'])))
+meals_df = sqlContext.jsonRDD(meals_json)
+events_df = sqlContext.jsonRDD(events_json)
+
+meals_df.registerTempTable('meals')
+events_df.registerTempTable('events')
+sqlContext.sql('select * from meals limit 5').collect()
+   
+sqlContext.sql("""
+    SELECT type, COUNT(type) as cnt FROM meals
+    INNER JOIN events on meals.meal_id = events.meal_id
+    WHERE events.event = 'bought'
+    GROUP BY meals.type
+    ORDER BY cnt DESC
+""").collect()
+
+To debug, use local sc:
+sc = ps.SparkContext('local')
+This way debug will be easy because sc will run in a single thread
+
+column.isNull()
+dataFrame.dropna(column_name)
+dataFrame.fillna()
+dataFrame.replace(to_erplace, value)
+pyspark.accumulators
+
+df.filter(df_dates['students_reached'].isNull()).select('students_reached', 'funding_status').collect()
+
+df_no_null = df.fillna(0, ['students_reached'])
+
+freq_items = df.freqItems(['school_city', 'grade_level'], 0.7).collect()
+
+df.select(....).describe().show()
+
+rdd.histogram()
+rdd.stats()
+df.groupby('column_name').count()
+df.describe('column_name')
+
+df.crosstab()
+df.corr()

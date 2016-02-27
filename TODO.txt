@@ -1,0 +1,8 @@
+- Udacity Intro to Descriptive Statistics
+- Udacity Intro to Inferential Statistics
+- udacity intro to machine learning
+- udacity Linear Algebra Refresher Course
+- safari building spark apps
+- safari Study Guide for the Developer Certification for Apache spark
+- safari docker
+- knime, rapidminer, weka

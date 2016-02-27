@@ -1,0 +1,75 @@
+when a docker container running, it is a "container"
+when it is stored in a registry, or local system, it is an image
+
+container is a running instance of an image
+
+sudo docker pull jupyter/all-spark-notebook
+
+docker run [OPTS] image [COMMAND] [ARGS]
+
+-v : Mount a volume to a container
+-t attach a pseudo-tty to a container
+-i: make container interactive (stdin open)
+-m constrain memory (-m 200m)
+-c increase container's CPU priority
+--name="name"
+-e: set env variable container process sees
+--entrypoint override container's entry point
+-h set hostname
+-p map container port to a host port
+-P true publish all container ports to host
+-rm: remove container when it exits
+-w: Working directory inside the container
+
+setenforce 0
+mkdir /var/web_data
+echo "The web server is operational" > /var/web_data/test.txt
+docker run -d -p 9090:9099 --name "my_webserver \
+   -w /opt -v /var/web/data:/opt fedora:latest \
+   /bin/python -m SimpleHTTPServer 9090
+docker ps
+netstat -tupln | grep 9090
+curl localhost:9090/text.txt
+
+sudo docker ps -a, -l, -q
+sudo docker inspect 50f01daa877f
+nmap 172.17.0.9
+
+docker start, stop, restart, kill
+docker rm
+    
+create a new image from a container:
+docker commit -m="ssh man on fedora base" -a="Turgay Zengin" 3lkhglkhj fedora_sshman
+
+save an image to a file:
+docker save -o kjhkjh.tar fedora_sshman
+
+load from a stored image:
+docker load -i kjhkjh.tar     
+
+sudo docker build -t turgayze/spark2:v2 .
+sudo docker run -t -i -rm --name spark1 -v /home/turg:/turg turgayze/spark2:v2
+
+DOCKERFILE
+CMD: sets command to execute when container starts
+EXPOSE: exposes container ports to host at runtime
+ENV: sets environment variables to pass to runtime
+ADD: copies files into the container
+ENTRYPOINT: sets container to run as chosen executable  
+VOLUME: mounts storage from host into the container
+USER: identifies the user assigned to running the container
+WORKDIR: sets current working directory
+ONBUILD
+
+sudo docker stop $(sudo docker ps -a -q)
+sudo docker rm $(sudo docker ps -a -q)
+sudo docker rmi $(sudo docker images -q)
+
+https://ezhaar.github.io/posts/2015/01/docker-spark/
+
+sudo docker run --name keyhost turgayze/ssh:v1
+
+sudo docker run --volumes-from keyhost --name master -h master.localdomain --dns-search=localdomain turgayze/spark4:v4
+
+To connect to a machine:
+sudo docker exec -it 3b89ff2ab60f bash

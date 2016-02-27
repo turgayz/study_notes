@@ -1,0 +1,22 @@
+sudo add-apt-repository ppa:mpstark/elementary-tweaks-daily
+sudo apt-get update
+sudo apt-get install elementary-tweaks
+
+-----------
+I had the same problem! If you run the following:
+
+env | grep -i gtk
+And see the module in your path like mine:
+
+GTK_MODULES=pantheon-filechooser-module:overlay-scrollbar
+Then it means it's being set somewhere to use the pantheon which needs to be removed. I did a quick grep and found the following:
+
+/etc/profile.d/pantheon-filechooser-module.sh:export GTK_MODULES=pantheon-filechooser-module
+So did:
+
+sudo rm /etc/profile.d/pantheon-filechooser-module.sh
+Finally - I saved my GTK_MODULES variable without the filechooser in my current session so not to have to restart: (obviously yours will be different to mine)
+
+GTK_MODULES="overlay-scrollbar"
+Job Done.
+-------------

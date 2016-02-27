@@ -1,0 +1,224 @@
+spark-shell --master local[*] --driver-memory 2g
+
+:help, :history, :paste
+
+val rawBlocks = sc.textFile("/home/turg/SPARK/advanced_analytics/linkage/")
+rawBlocks.first
+val head = rawBlocks.take(10)
+head.foreach(println)
+
+val splitted = rawBlocks.map(rec => rec.split(","))
+val bad = splitted.filter(arr => arr.length != 12)
+ 
+def isHeader(line: String) = line.contains("id_1")
+
+head.filter(isHeader).foreach(println)
+head.filterNot(isHeader).foreach(println)
+
+head.filter(x => !isHeader(x)).foreach(println)
+head.filter(!isHeader(_)).foreach(println)
+
+val noheader = rawBlocks.filter(!isHeader(_))
+
+def toDouble(s: String) = if("?".equals(s)) Double.NaN else s.toDouble
+
+def parse(line: String) = {
+  val pieces = line.split(',')
+  val id1 = pieces(0).toInt
+  val id2 = pieces(1).toInt
+  val scores = pieces.slice(2,11).map(toDouble)
+  val matched = pieces(11).toBoolean
+  (id1, id2, scores, matched)
+} 
+
+val tup = parse(head(1))
+tup._1 === tup.productElement(0)
+
+case class MatchData(id1: Int, id2: Int,
+     scores: Array[Double], matched: Boolean)
+
+def parse(line: String) = {
+  val pieces = line.split(',')
+  val id1 = pieces(0).toInt
+  val id2 = pieces(1).toInt
+  val scores = pieces.slice(2,11).map(toDouble)
+  val matched = pieces(11).toBoolean
+  MatchData(id1, id2, scores, matched)
+}      
+
+val parsed = noheader.map(parse(_))
+parsed.cache
+
+noheader.getStorageLevel.useMemory --> is the rdd in memory (cached)?
+
+val mds = head.filter(!isHeader(_)).map(parse(_))
+val mdsGrouped = mds.groupBy(md => md.matched)
+mdsGrouped.mapValues(arr => arr.size).foreach(println)
+
+val matchcounts = parsed.map(md => md.matched).countByValue
+
+val matchcountsSeq = matchcounts.toSeq
+matchcountsSeq.sortBy(_._1).foreach(println)
+matchcountsSeq.sortBy(_._1).reverse.foreach(println)
+
+RDD[Double] has an action "stats". reports count, mean, stdev, max, min
+parsed.map(_.scores(0)).stats
+
+get only scores which are not isNaN:
+import java.lang.Double.isNaN
+parsed.map(_.scores(0)).filter(!isNaN(_)).stats
+
+get stats for all scores:
+val stats = (0 until 9).map(i => {
+  parsed.map(_.scores(i)).filter(!isNaN(_)).stats
+})
+
+stats(1)
+
+load a scala file:
+:load /home/turg/SPARK/scala_ws/AdvancedAnalyticsSpark/src/chapter1/StatsWithMissing.scala
+
+build an RDD holding an array of 9 NAStatCounter instances for each row:
+val nasRDD = parsed.map(_.scores.map(NAStatCounter(_)))
+
+how to merge 2 NAStatCounter objects:
+val nas1 = Array(1.0, Double.NaN).map(d => NAStatCounter(d))
+val nas2 = Array(Double.NaN, 2.0).map(d => NAStatCounter(d))
+val merged = nas1.zip(nas2).map(p => p._1.merge(p._2))
+
+or better:
+val merged = nas1.zip(nas2).map { case (a, b) => a.merge(b) }
+
+how to merge all records in a collection:
+val nas = List(nas1, nas2)
+val merged = nas.reduce((n1, n2) => {
+  n1.zip(n2).map { case (a, b) => a.merge(b) }
+})
+
+mer all NAStatCounters in the RDD:
+val reduced = nasRDD.reduce((n1, n2) => {
+  n1.zip(n2).map { case (a,b) => a.merge(b) }
+})
+reduced.foreach(println)
+
+val statsm = statsWithMissing(parsed.filter(_.matched).map(_.scores))
+val statsn = statsWithMissing(parsed.filter(!_.matched).map(_.scores))
+
+We can use the differences in the values of the columns for matches and nonmatches as a simple bit of
+analysis to help us come up with a scoring function for discriminating matches from
+nonmatches purely in terms of these match scores:
+
+statsm.zip(statsn).map { case(m, n) =>
+  (m.missing + n.missing, m.stats.mean - n.stats.mean)
+}.foreach(println)
+
+...
+((1007, 0.2854...), 0)
+((5645434,0.09104268062279874), 1)
+((0,0.6838772482597568), 2)
+((5746668,0.8064147192926266), 3)
+((0,0.03240818525033484), 4)
+((795,0.7754423117834044), 5)
+((795,0.5109496938298719), 6)
+((795,0.7762059675300523), 7)
+((12843,0.9563812499852178), 8)
+
+We can get a rough feel for the performance of
+our simple model by creating an RDD of scores and match values and evaluating how
+well the score discriminates between matches and nonmatches at various thresholds:
+
+def naz(d: Double) = if (Double.NaN.equals(d)) 0.0 else d
+case class Scored(md: MatchData, score: Double)
+val ct = parsed.map(md => {
+  val score = Array(2, 5, 6, 7, 8).map(i => naz(md.scores(i))).sum
+  Scored(md, score)
+})
+
+Using a high threshold value of 4.0, meaning that the average of the five features was
+0.8, we filter out almost all of the nonmatches while keeping over 90% of the matches:
+ct.filter(s => s.score >= 4.0).map(s => s.md.matched).countByValue()
+...
+Map(false -> 637, true -> 20871)
+Using the lower threshold of 2.0, we can ensure that we capture all of the known
+matching records, but at a substantial cost in terms of false positives:
+ct.filter(s => s.score >= 2.0).map(s => s.md.matched).countByValue()
+...
+Map(false -> 596414, true -> 20931)
+
+Chapter2 Recommendation ALS
+spark-shell --driver-memory 6g
+
+val rawUserArtistData = sc.textFile("/home/turg/SPARK/advanced_analytics/profiledata_06-May-2005/user_artist_data.txt")
+
+val artistByID = rawArtistData.flatMap { line =>
+  val (id, name) = line.span(_ != '\t')
+  if (name.isEmpty) {
+    None
+  } else {
+    try {
+      Some((id.toInt, name.trim))
+    } catch {
+      case e: NumberFormatException => None
+    }
+  }
+}
+
+lookup can be used when we have a pair RDD:
+artistByID.lookup(6803336).head
+
+val rawArtistAlias = sc.textFile("/home/turg/SPARK/advanced_analytics/profiledata_06-May-2005/artist_alias.txt")
+val artistAlias = rawArtistAlias.flatMap { line =>
+  val tokens = line.split('\t')
+  if (tokens(0).isEmpty) {
+    None
+  } else {
+    Some((tokens(0).toInt, tokens(1).toInt))
+  }
+}.collectAsMap()
+
+import org.apache.spark.mllib.recommendation._
+val bArtistAlias = sc.broadcast(artistAlias)
+val trainData = rawUserArtistData.map { line =>
+  val Array(userID, artistID, count) = line.split(' ').map(_.toInt)
+  val finalArtistID =
+    bArtistAlias.value.getOrElse(artistID, artistID)
+  Rating(userID, finalArtistID, count)
+}.cache()
+
+build a model:
+val model = ALS.trainImplicit(trainData, 10, 5, 0.01, 1.0)
+model.userFeatures.mapValues(_.mkString(", ")).first()
+
+val rawArtistsForUser = rawUserArtistData.map(_.split(' ')).
+  filter { case Array(user,_,_) => user.toInt == 2093760 }
+val existingProducts =
+  rawArtistsForUser.map { case Array(_,artist,_) => artist.toInt }.
+  collect().toSet
+
+artistByID.filter { case (id, name) =>
+  existingProducts.contains(id)
+}.values.collect().foreach(println)
+
+val recommendations = model.recommendProducts(2093760, 5)
+recommendations.foreach(println)
+
+val recommendedProductIDs = recommendations.map(_.product).toSet
+artistByID.filter { case (id, name) =>
+  recommendedProductIDs.contains(id)
+}.values.collect().foreach(println)
+
+Training - Cross Validation data sets:
+
+...
+
+Chapter 4 Decision Trees
+
+import org.apache.spark.mllib.linalg._
+import org.apache.spark.mllib.regression._
+val rawData = sc.textFile("/home/turg/SPARK/advanced_analytics/covtype/covtype.data")
+val data = rawData.map { line =>
+  val values = line.split(',').map(_.toDouble)
+  val featureVector = Vectors.dense(values.init)
+  val label = values.last - 1
+  LabeledPoint(label, featureVector)
+}
