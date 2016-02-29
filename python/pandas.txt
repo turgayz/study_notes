@@ -1,0 +1,7 @@
+import pandas
+trainData = pandas.read_csv("D:/turg/SPARK/kaggle/BNP/train.csv", delimiter=",")
+
+features_train = trainData.ix[0:100000,5:22]
+labels_train = trainData.ix[0:100000,1]
+features_test = trainData.ix[100001:,5:22]
+labels_test = trainData.ix[100001:,1]
