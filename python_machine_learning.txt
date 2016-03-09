@@ -1,0 +1,5 @@
+from sklearn.preprocessing import LabelEncoder
+
+class_le = LabelEncoder()
+y = class_le.fit_transform(df['classlabel'].values)
+y
