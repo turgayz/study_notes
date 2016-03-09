@@ -26,3 +26,23 @@ price size color_blue color_green color_red
 0 10.1 1 0 1 0
 1 13.5 2 0 0 1
 2 15.3 3 1 0 0
+
+there are two common approaches to bringing different features onto the same scale: normalization and standardization
+normalization refers to the rescaling of the features to a range of [0, 1], which is a special case of min-max scaling.
+
+from sklearn.preprocessing import MinMaxScaler
+mms = MinMaxScaler()
+X_train_norm = mms.fit_transform(X_train)
+
+Using standardization, we center the feature columns at mean 0 with standard deviation 1 so that the feature columns take the form of a normal distribution, which makes it easier to learn the weights. Furthermore, standardization maintains useful information about outliers and makes the algorithm less sensitive to them in contrast to min-max scaling, which scales
+the data to a limited range of values
+
+from sklearn.preprocessing import StandardScaler
+
+stdsc = StandardScaler()
+X_train_std = stdsc.fit_transform(X_train)
+X_test_std = stdsc.transform(X_test)
+
+it is also important to highlight that we fit the StandardScaler only once
+on the training data and use those parameters to transform the test set or any new data point.
+
