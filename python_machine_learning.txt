@@ -3,3 +3,26 @@ from sklearn.preprocessing import LabelEncoder
 class_le = LabelEncoder()
 y = class_le.fit_transform(df['classlabel'].values)
 y
+
+[[1, 1, 10.1],
+ [2, 2, 13.5],
+ [0, 3, 15.3]]
+       
+LabelEncoder is good for label only.
+
+For nominal features, use one-hot encoding:
+from sklearn.preprocessing import OneHotEncoder
+
+ohe = OneHotEncoder(categorical_features=[0])
+ohe.fit_transform(X).toarray()
+
+[[  0. ,   1. ,   0. ,   1. ,  10.1],
+ [  0. ,   0. ,   1. ,   2. ,  13.5],
+ [  1. ,   0. ,   0. ,   3. ,  15.3]]
+ 
+ pandas.getDummies() method does the same thing:
+ pd.get_dummies(df[['price', 'color', 'size']])
+price size color_blue color_green color_red
+0 10.1 1 0 1 0
+1 13.5 2 0 0 1
+2 15.3 3 1 0 0
