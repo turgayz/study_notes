@@ -73,3 +73,8 @@ sudo docker run --volumes-from keyhost --name master -h master.localdomain --dns
 
 To connect to a machine:
 sudo docker exec -it 3b89ff2ab60f bash
+
+copy from host to container:
+cat /home/turg/SPARK/kaggle/BNP_claims/train.csv | sudo docker exec -i spark_slave2 sh -c 'cat > /home/turg/SPARK/kaggle/BNP_claims/train.csv'
+
+copy from container to host: docker cp
