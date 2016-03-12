@@ -1,0 +1,4 @@
+Naïve Bayes assumes that the features (or dimensions) within a data set are independent of
+one another, that is, they have no effect on each other
+
+Naïve Bayes needs the data classes to be linearly divisible along the class boundaries.

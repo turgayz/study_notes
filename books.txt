@@ -1,0 +1,3 @@
++ Python Machine Learning
+- Python Data Science Cookbook
+- Advanced Analytics with Spark

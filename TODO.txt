@@ -6,3 +6,4 @@
 - safari Study Guide for the Developer Certification for Apache spark
 - safari docker
 - knime, rapidminer, weka
+- http://featureselection.asu.edu/tutorial.php
