@@ -1,3 +1,201 @@
+To load from a java object serialized file:
 val data = sc.objectFile[String]("/home/turg/SPARK/Safari_Spark_Study_Guide/files/Chapter2/object-example/")
 
+to see the RDD lineage: (DAG direct acyclic graph)
+data.toDebugString 
 
+to join 2 RDDs:
+case class Register(uuid: String, date: String, customerId: Int, lat: Double, long: Double)
+val register = sc.textFile("D:/turg/SPARK/Safari_Spark_Study_Guide/work/Chapter2/join/reg.tsv")
+               .map(_.split("\t")).map(c => Register(c(1), c(0), c(2).toInt, c(3).toDouble, c(4).toDouble))
+               .map(r => (r.uuid, r))
+case class Click(uuid: String, date: String, pageId: Int)
+val clicks = sc.textFile("D:/turg/SPARK/Safari_Spark_Study_Guide/work/Chapter2/join/clk.tsv")
+             .map(_.split("\t")).map(c => (c(1), Click(c(1), c(0), c(2).toInt)))
+val joined = clicks.join(register)
+
+to set Kryo serializer
+conf.set("spark.serializer", "org.apache.spark.serializer.KryoSerializer")
+
+to register classes with Kryo:
+conf.set("spark.kryo.registrationRequired", "true")
+conf.registerKryoClasses(new Class[] {Object[].class, User.class})
+conf.set("spark.kryoserializer.buffer.mb", "24")
+
+variables are serialized in lambdas, each time they are used.
+To prevent this, use broadcast variables:
+broadcast variables are read-only
+
+val data = sc.parallelize(1 to 1000)
+val MULTIPLICATION_FACTOR = 4
+val multiplied = data.map(i => i * MULTIPLICATION_FACTOR)
+
+val factor = sc.broadcast(MULTIPLICATION_FACTOR)
+val multiplied = data.map(i => i * factor.value)
+
+Accumulators:
+driver: read, workers: write
+
+val accum = sc.accumulator(0)
+accum.value
+
+cache, persist:
+rdd.cache
+rdd.persist(StorageLevel.MEMORY_AND_DISK)
+
+Spark SQL:
+spark-shell --driver-java-options="-Duser.country=US -Duser.language=en"
+
+val df = sqlContext.createDataFrame(List(("myself", 1)))
+df.toDF("name", "count").show
+
+case class Author(name: String, nbBooks: Int)
+val rdd = sc.parallelize(List(Author("Kipling", 32), Author("Me", 1)))
+
+import sqlContext.implicits._
+val df = rdd.toDF
+df.printSchema
+
+applying a schema:
+import org.apache.spark.sql.Row
+import org.apache.spark.sql.types._
+
+val rdd = sc.parallelize(List(("Kipling", 32), ("Me", 1)))
+   .map{case (name, count) => Row(name, count)}
+
+val schema = StructType(List(
+  StructField("name", StringType)
+))
+
+val df = sqlContext.createDataFrame(rdd, schema)
+
+df.registerTempTable("authors")
+val authorsDF = sqlContext.sql("select * from authors where value > 2")
+
+authorsDF.save("D:/sil/authors.parquet") //saves as parquet by default
+val loadedDF = sqlContext.load("d:/sil/authors.parquet")
+
+json:
+authorsDF.save("d:/sil/authors.json", "json")
+val jsonDF = sqlContext.load("d:/sil/authors.json", "json")
+
+val df = sqlContext.load("D:/turg/SPARK/Safari_Spark_Study_Guide/work/Chapter5/data_titanic.json", "json")
+
+val rdd = df.rdd
+rdd.map(_.getDouble(0)).sum / rdd.count
+
+df.registerTempTable("passengers")
+sqlContext.sql("""
+    SELECT sex,
+	sum(age) / count(*) AS mean_age,
+    min(age) AS youngest,
+    max(age) AS oldest
+    FROM passengers
+	GROUP BY sex""").show
+
+Dataframe can be cached, or, temporary table can be cached:
+df.cache
+sqlContext.cacheTable("passengers")
+sqlContext.uncacheTable("passengers")
+
+UDF:
+sqlContext.udf.register("first_letter", (input: String) 
+   => input.charAt(0).toString)
+sqlContext.sql("SELECT first_letter(name) from passengers").show
+
+MLLIB:
+spark.mllib contains the original API built on top of RDDs.
+spark.ml provides higher-level API built on top of DataFrames for constructing ML pipelines.
+
+For exam, study:
+Classification & Regression: SVM, Logistic & Linear Regression
+Clustering: KMeans
+
+another way of selecting using a DF:
+val persons = df.select("name", "age", "sex", "survived").rdd
+
+val features = persons.map(row =>
+  LabeledPoint(row.getLong(3).toDouble,
+    Vectors.dense(
+	  row.getDouble(1),
+	  if (row.getString(2) == "M") 0 else 1
+	)
+  )
+)
+
+val splits = features.randomSplit(Array(0.6, 0.4))
+val trainingSet = splits(0)
+val validationSet = splits(1)
+
+val model = SVMWithSGD.train(trainingSet, 50)
+
+val scoresAndLabels = validationSet.map { point =>
+  val score = model.predict(point.features)
+  (score, point.label)
+}
+
+val metrics = new BinaryClassificationMetrics(scoresAndLabels)
+print(metrics.areaUnderROC)
+
+Graphx:
+
+For the exam:
+- Create a graph
+- Load a graph
+- Triplets manipulation Source => Edge => Destination
+- Filtering edges / creating a subgraph
+- Using common algorithms
+
+val vertices = sc.parallelize(Array(
+  (1L, "John"),
+  (2L, "Maria"),
+  (3L, "Patrick"),
+  (4L, "Maurice")
+))  
+
+val edges = sc.parallelize(Array(
+  Edge(1L, 2L, "loves"),
+  Edge(1L, 3L, "hates"),
+  Edge(2L, 3L, "loves"),
+  Edge(4L, 2L, "loves")
+))
+
+val graph = Graph(vertices, edges)
+
+graph.triplets.map { triplet =>
+  s"${triplet.srcAttr} ${triplet.attr} ${triplet.dstAttr}"
+}.foreach(println)
+
+subgraph of edges:
+graph.subgraph(
+  epred = (triplet) => triplet.attr == "loves"
+).triplets.map { triplet =>
+  s"${triplet.srcAttr} ${triplet.attr} ${triplet.dstAttr}"
+}.foreach(println)
+
+graph.edges.filter(_.attr == "loves").count
+
+load a graph from file:
+val graph = GraphLoader.edgeListFile(sc, edgeListPath)
+
+Spark Streaming:
+- DStream instead of RDD
+- Mandatory "batch time window"
+- methods: foreachRDD, transform, transformWith
+exam:
+- create a DStream / streaming context
+- reuse existing RDD transformations
+- how to use stateful transformations
+- how to use window operations
+- how to use checkpoints
+
+val ssc = new StreamingContext(sc, Durations.seconds(2))
+
+- updateStateByKey
+- ssc.checkpoint("checkpoint_dir")
+- StreamingContext.getOrCreate
+- StreamingKMeans
+- StreamingLinearRegression
+
+ssc.start
+ssc.awaitTermination
