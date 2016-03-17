@@ -199,3 +199,28 @@ val ssc = new StreamingContext(sc, Durations.seconds(2))
 
 ssc.start
 ssc.awaitTermination
+
+1. Broadcast and Accumulator
+2. Word count example in python/Java/Scala
+3. Different transformation examples on basic RDD in python/Java/Scala
+4. Different actions examples on basic RDD in python/Java/Scala
+5. Different transformation examples on pair RDD in python/Java/Scala
+6. Different actions examples on pair RDD in python/Java/Scala
+7. Lazy evaluation
+8. RDD lineage graph
+9. Batch and window sizing in spark streaming
+10. SchemaRDD in spark sql
+11. Basic query example in spark sql
+
+Different transformation & actions in RDD
+Pair RDD and Dstreams
+Batch and window sizing in spark streaming
+Various Joins and Cartesian operations in RDD
+Broadcast and accumulator
+Word count example (Specially in Java)
+pyspark especially set and join
+schemaRDD in spark sql
+Lineage and memory usage
+MLLib : Regression, K-means and Clustering
+Graph-X: Spark Quick Start guide would be enough
+
