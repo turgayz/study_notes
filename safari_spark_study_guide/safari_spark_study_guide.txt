@@ -224,3 +224,12 @@ Lineage and memory usage
 MLLib : Regression, K-means and Clustering
 Graph-X: Spark Quick Start guide would be enough
 
+-------------
+To include a dependency using maven coordinates:
+$ ./bin/spark-shell --master local[4] --packages "org.example:example:0.1"
+
+One important parameter for parallel collections is the number of partitions to cut the dataset into. Spark will run one task for each partition of the cluster.
+
+sort by value of pair rdd:
+counts.sortBy(c => c._2, false).take(10)
+
