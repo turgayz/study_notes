@@ -1,0 +1,19 @@
+HADOOP:
+
+HDFS commands:
+-put
+-ls
+-get
+-cat
+-mkdir
+-rm -r
+-mv
+-cp
+
+Name Node: Manages HDFS, keeps metadata
+Job Tracker: Manages MapReduce
+
+-Files in HDFS are write-once
+-Each map task operates on a single HDFS block, and (most of the time) on the node storing the data
+
+
