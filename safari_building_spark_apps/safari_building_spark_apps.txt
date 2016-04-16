@@ -1,3 +1,61 @@
+java install:
+You can use WebUpd8 PPA (this will download the required files from Oracle and install JDK 8):
+
+sudo apt-add-repository ppa:webupd8team/java
+sudo apt-get update
+sudo apt-get install oracle-java8-installer
+Are PPA's safe to add to my system and what are some “red flags” to watch out for?
+
+Also ensure your JAVA_HOME variable has been set to:
+
+/usr/lib/jvm/java-8-oracle
+For this you can use the following command (see step 3 of Manual Install to see how to make it permanent):
+
+export JAVA_HOME=/usr/lib/jvm/java-8-oracle
+----------------
+scala install:
+export SCALA_HOME=~/programs/scala-2.11.7
+export PATH=$PATH:$SCALA_HOME/bin
+----------------
+SPARK install:
+export SPARK_HOME=/home/turg/SPARK/spark-1.6.0-bin-hadoop2.6
+export PATH=$PATH:$SPARK_HOME/bin
+----------------
+anaconda install:
+/home/turg/programs/anaconda2
+----------------
+hadoop install
+/home/turg/programs/hadoop-2.6.4/
+export HADOOP_HOME=/home/turg/programs/hadoop-2.6.4
+export PATH=$PATH:$HADOOP_HOME/bin
+
+hadoop_env.sh: export JAVA_HOME=/usr/lib/jvm/java-8-oracle
+spark_env.sh: export HADOOP_CONF_DIR=/home/turg/programs/hadoop-2.6.4/etc/hadoop/
+----------------
+change hostname
+Edit /etc/hostname , make the name change, save the file.
+You should also make the same changes in /etc/hosts file.
+- in master, delete "127.0.0.1 master" line from /etc/hosts
+----------------
+ssh setup:
+ssh-keygen -t dsa -P '' -f ~/.ssh/id_dsa
+ssh-copy-id -i ~/.ssh/id_dsa.pub turg@master
+ssh-copy-id -i ~/.ssh/id_dsa.pub turg@slave1
+ssh-copy-id -i ~/.ssh/id_dsa.pub turg@slave2
+
+scp spark-env.sh slave1:/home/turg/SPARK/spark-1.6.0-bin-hadoop2.6/conf/
+scp spark-env.sh master:/home/turg/SPARK/spark-1.6.0-bin-hadoop2.6/conf/
+----------------
+access from spark:
+export SPARK_LOCAL_IP=laptop
+spark-shell --master=spark://master:7077
+
+bin/hdfs dfs -fs hdfs://master:9000 -mkdir /sil
+bin/hdfs dfs -fs hdfs://master:9000 -put /home/turg/SPARK/advanced_analytics/profiledata_06-May-2005/user_artist_data.txt /sil
+val rawUserArtistData = sc.textFile("hdfs://master:9000/sil/user_artist_data.txt")
+
+----------------
+
 Driver: Process that contains the SparkContext
 Worker: Node that can run application code
 
